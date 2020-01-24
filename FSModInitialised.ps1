@@ -45,4 +45,35 @@ function preFileMigrationController{
     #>
 }
 
+function sortFilesInFolder {
+    <#
+    This function will help in sorting the files in a folder . this will be a challenging
+    task .
+    #>
+}
 
+function appendExcelorDB{
+    <#
+    This function will append the DB log or excel log (Master setup) based on the switch
+    #>
+}
+
+function VerifyFileName{
+    <#
+    This function will verify the file naming convetion before moving to a folder location
+    #>
+}
+
+function Createlog{
+
+}
+
+function fatalerror{
+    <#
+    in Case of fatal error objects will be disposed here
+    #>
+}
+
+<#
+other helper functions to be mentioned below
+#>
