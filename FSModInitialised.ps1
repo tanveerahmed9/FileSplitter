@@ -4,7 +4,15 @@ param (
   # add all parameters here when calling this module directly
 )
 
+function sortFilesInFolder {
+    <#
+    This function will help in sorting the files in a folder . this will be a challenging
+    task .
+    #>
+}
 
+
+# this function will do initial migration test , like path check , folder creation and then pass the controller to other helper functions
 function preFileMigrationController{
     # Parameter help description
     param(
@@ -14,7 +22,7 @@ function preFileMigrationController{
     $folderPath,
     # Parameter help description
     [Parameter(Mandatory=$true)]
-    [ParameterType]
+    [int]
     $groupCount,
 
     [Parameter(Mandatory=$true)]
@@ -25,7 +33,7 @@ function preFileMigrationController{
     [string]
     $namingConvention
     )
-    <#what it does
+    <# what it does
     fetch following parameters as input 
 
     1. Migration file path
@@ -43,14 +51,45 @@ function preFileMigrationController{
  
      Side note - refer importExcel module as well as PSCache for optimisation
     #>
+
+    begin{
+    #region test paramter value
+     #endregion
+    # check if folder is present in the machine
+    if (!(test-path -path $folderPath)){
+        #call Fatal error 
+        fatalerror
+    }
+    
+     $totalFileCount = (Get-ChildItem -Path $folderPath | Select-Object Extension | Where-Object Extension -EQ "$extension").Count
+     # when the group count is less than or equal to the total files in the fodlers
+     if ($groupCount -ge $totalFileCount){
+         $totalFolders = 1 
+     }
+     else{
+         
+         $totalFolders = [int][math]::Ceiling(($totalFileCount/$groupCount)) # taking ceiling value since we need to have an extra folder for remaining files
+     }
+    }
+    process{
+          #create the child FD
+          sortFilesInFolder # sort all 
+          $tempFolderCount = $totalFolders 
+          while ($tempFolderCount -gt 0)
+          {
+            $tempFolderName = "Premigration_$tempFolderCount"
+            New-Item -ItemType Directory -Path $folderPath -Name $tempFolderName | Out-Null
+            $tempFolderCount -= 1 #reducing the count for subsequent folder creation
+          }
+    }
+    end{
+
+    }
+
 }
 
-function sortFilesInFolder {
-    <#
-    This function will help in sorting the files in a folder . this will be a challenging
-    task .
-    #>
-}
+preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -groupCount 10 -extension ".pdf"
+
 
 function appendExcelorDB{
     <#
@@ -65,15 +104,23 @@ function VerifyFileName{
 }
 
 function Createlog{
+<#
+Create a global log path
+
+#>
+param(
+    
+)
 
 }
 
 function fatalerror{
     <#
-    in Case of fatal error objects will be disposed here
+    in Case of fatal error objects will be disposed here and the execution will stop
     #>
 }
 
 <#
 other helper functions to be mentioned below
 #>
+
