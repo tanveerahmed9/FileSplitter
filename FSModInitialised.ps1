@@ -24,8 +24,36 @@ function SortedFilesInFolder
     return $sortedArray
 }
 
+function MoveFiles{
+
+    # this function will move files based on sortedarray received
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $folderPath, 
+        
+        [Parameter(Mandatory=$true)]
+        [System.Array]
+        $fileArray,
+
+        [Parameter(Mandatory=$true)]
+        [System.Array]
+        $outputPath,
+
+        [Parameter(Mandatory=$true)]
+        [System.Array]
+        $folderIndex
+
+    )
+    foreach ($tempFiles in $fileArray)
+    {
+     $currentFile = "$folderPath/$tempFiles" #current file in the directory
+     $destPath = "$outputPath/Premigration_$folderIndex/$tempFiles"
+     [System.IO.File]::Copy($currentFile,$destPath) | Out-Null #file copied to the new location
+    }
 
 
+}
 # this function will do initial migration test , like path check , folder creation and then pass the controller to other helper functions
 function PreFileMigrationController{
     # Parameter help description
@@ -45,7 +73,11 @@ function PreFileMigrationController{
 
     [Parameter(Mandatory=$false)]
     [string]
-    $namingConvention
+    $namingConvention,
+
+    [Parameter(Mandatory=$true)]
+    [string]
+    $outputPath
     )
     <# what it does
     fetch following parameters as input 
@@ -87,14 +119,29 @@ function PreFileMigrationController{
     }
     process{
           #create the child FD
+
           $sortedFileArray = sortedFilesInFolder  -folderPath $folderPath -Extension $extension # sortedarray of files
           $tempFolderCount = $totalFolders 
           #region temp folder creation in the output path
           while ($tempFolderCount -gt 0)
           {
             $tempFolderName = "Premigration_$tempFolderCount"
-            New-Item -ItemType Directory -Path $folderPath -Name $tempFolderName | Out-Null
+            New-Item -ItemType Directory -Path $outputPath -Name $tempFolderName | Out-Null
             $tempFolderCount -= 1 #reducing the count for subsequent folder creation
+          }
+          Write-Host "Folders Created" -ForegroundColor Green 
+          #endregion
+          #region extracting subarray and passing to moveFile
+          $initialIndex = 0
+          $destfolderIndex = 0
+          while ($initialIndex -le $sortedFileArray.count)
+          {
+          $destfolderIndex += 1
+          $finalIndex = $initialIndex + $groupCount - 1
+          $subFileArray = @()
+          $subFileArray = $sortedFileArray[$initialIndex..$finalIndex] # extracted subsection to move to nth folder
+          MoveFiles -folderPath $folderPath -outputPath $outputPath -fileArray $subFileArray -folderIndex $destfolderIndex
+          $initialIndex += $groupCount # moving the initial index to current index of the array
           }
           #endregion
     }
@@ -104,7 +151,7 @@ function PreFileMigrationController{
 
 }
 
-preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -groupCount 2 -extension ".pdf"
+preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -groupCount 2 -extension ".pdf" -outputPath "C:\Users\t.b.ahmed\Desktop\outputPath"
 
 
 function AppendExcelorDB{
