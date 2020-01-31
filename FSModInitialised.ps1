@@ -4,16 +4,30 @@ param (
   # add all parameters here when calling this module directly
 )
 
-function sortFilesInFolder {
+function SortedFilesInFolder
+ {
     <#
-    This function will help in sorting the files in a folder . this will be a challenging
+    This function retunrs all the childitems in a sorted format in an array.
     task .
     #>
+
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $folderPath,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Extension
+        )
+    $sortedArray = Get-ChildItem -Path $folderPath | Where-Object Extension -EQ $Extension | Select-Object -ExpandProperty  Name | Sort-Object -Property Name -Descending   
+    return $sortedArray
 }
 
 
+
 # this function will do initial migration test , like path check , folder creation and then pass the controller to other helper functions
-function preFileMigrationController{
+function PreFileMigrationController{
     # Parameter help description
     param(
 
@@ -73,14 +87,16 @@ function preFileMigrationController{
     }
     process{
           #create the child FD
-          sortFilesInFolder # sort all 
+          $sortedFileArray = sortedFilesInFolder  -folderPath $folderPath -Extension $extension # sortedarray of files
           $tempFolderCount = $totalFolders 
+          #region temp folder creation in the output path
           while ($tempFolderCount -gt 0)
           {
             $tempFolderName = "Premigration_$tempFolderCount"
             New-Item -ItemType Directory -Path $folderPath -Name $tempFolderName | Out-Null
             $tempFolderCount -= 1 #reducing the count for subsequent folder creation
           }
+          #endregion
     }
     end{
 
@@ -88,10 +104,10 @@ function preFileMigrationController{
 
 }
 
-preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -groupCount 10 -extension ".pdf"
+preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -groupCount 2 -extension ".pdf"
 
 
-function appendExcelorDB{
+function AppendExcelorDB{
     <#
     This function will append the DB log or excel log (Master setup) based on the switch
     #>
