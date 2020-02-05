@@ -5,7 +5,41 @@ param (
 )
 
 #region libraries to be imported (dependancy management)
-
+function appendexcel{
+    param(
+        # Parameter help description
+        [Parameter(Mandatory=$true)]
+        [string]
+        $fileName,
+    
+        [Parameter(Mandatory=$true)]
+        [System.Array]
+        $inputData,
+    
+        [Parameter(Mandatory=$true)]
+        [string]
+        $columnIndex
+    )
+    
+    
+    process{
+        if (Test-Path -Path $fileName){
+            $inputData  | Export-Excel -Path  $fileName -WorksheetName "MasterData" -StartColumn $columnIndex -Show -Append
+        }
+        else{ # creating master file for the first time
+            #region add column to excel
+            #creating PSObject for column names
+            $columNames = New-Object -TypeName PSObject
+            $d = [ordered]@{Name="";group="";Size=""}
+            $columNames| Add-Member -NotePropertyMembers $d -TypeName Asset
+            $columNames | Export-Excel -Path  $fileName -WorksheetName "MasterData"  #add the column name to the new file 
+            
+            #endregion
+            $inputData  | Export-Excel -Path  $fileName -WorksheetName "MasterData" -StartColumn $columnIndex -AutoSize  -Append #append the first data
+        }
+    }
+    
+    }
 function SortedFilesInFolder
  {
     <#
@@ -142,8 +176,12 @@ function PreFileMigrationController{
           $finalIndex = $initialIndex + $groupCount - 1
           $subFileArray = @()
           $subFileArray = $sortedFileArray[$initialIndex..$finalIndex] # extracted subsection to move to nth folder
-          MoveFiles -folderPath $folderPath -outputPath $outputPath -fileArray $subFileArray -folderIndex $destfolderIndex
-          $initialIndex += $groupCount # moving the initial index to current index of the array
+          MoveFiles -folderPath $folderPath -outputPath $outputPath -fileArray $subFileArray -folderIndex $destfolderIndex # move file called to move the section of files
+          $initialIndex += $groupCount # moving the initial index pointer to current index of the array
+          
+          #data chunk to be transmitted for excel of sql data addition
+          appendexcel -fileName "$outputPath/MasterData.xlsx" -inputData $subFileArray -columnIndex 1 
+
           }
           #endregion
     }
@@ -157,38 +195,7 @@ preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -
 
 Write-Host "1st phase completed" -ForegroundColor Green
 
-function appendexcel{
-param(
-    # Parameter help description
-    [Parameter(Mandatory=$true)]
-    [string]
-    $fileName,
 
-    [Parameter(Mandatory=$true)]
-    [string]
-    $inputData
-)
-process{
-    if (Test-Path -Path $fileName){
-        get-help  Set-Row -Detailed 
-        $excelObject = New-object -TypeName OfficeOpenXml.ExcelPackage
-        $excelObject.File = "C:\Users\t.b.ahmed\Desktop\outputPath\MasterData.xlsx"
-        $excelObject.Workbook.Worksheets.Add("MasterData")
-        Set-Row -Worksheetname "MasterData"  -ExcelPackage $excelObject
-        #why we cant format the data
-
-    }
-    else{
-        new-item -path $fileName | Out-Null
-        #create excel object for referencing 
-        $excelObject = New-Object OfficeOpenXml.ExcelPackage
-        $excelObject.File = "C:\Users\t.b.ahmed\Desktop\outputPath\MasterData.xlsx"
-        $excelObject.Workbook.Worksheets.Add("MasterData")
-        Set-ExcelRow -Value {"1,23,4:1,3,3:2"}  -ExcelPackage $excelObject -Worksheetname "MasterData"
-    }
-}
-
-}
 
 function appendsql{
 
@@ -219,23 +226,22 @@ function AppendExorDB{
 
     begin{
         #split the data stream (since begin block is only invoked once and we will be fetching data from pipeline)
-        $inputData = "filename1,foldername1,size1;filename2,foldername1,size2"
-        $splittedData = $inputData -split ";"
+        $inputNames = "filename1,filename2,filename3,filename4,filename5"
+        $splittedData = $inputData -split ","
         $intialIndex = 0
-        $dataLength = $inputData.Length()
+        $dataLength = $splittedData.Count
         $parameterSetName = $PSCmdlet.ParameterSetName
     }
     process
     {
-        while($intialIndex -lt $dataLength){
-           $insertedData = $splittedData[$initialIndex] # get the data to be inserted
+ # get the data to be inserte        
+
            switch ($parametersetname)
            {
                "SQL" {} #call sql insertion
                "Excel" {} #call Excel insertion
            }
-           $intialIndex +=1 # incrementing index to point to the next data in the array
-        }
+          # incrementing index to point to the next data in the array
     }
     end{
         #dispose all open sessions
