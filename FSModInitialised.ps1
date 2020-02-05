@@ -175,6 +175,7 @@ process{
         $excelObject.File = "C:\Users\t.b.ahmed\Desktop\outputPath\MasterData.xlsx"
         $excelObject.Workbook.Worksheets.Add("MasterData")
         Set-Row -Worksheetname "MasterData"  -ExcelPackage $excelObject
+        #why we cant format the data
 
     }
     else{
