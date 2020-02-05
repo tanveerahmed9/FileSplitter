@@ -191,6 +191,7 @@ function PreFileMigrationController{
 
 }
 
+#parameters exposed to end users
 preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -groupCount 3 -extension ".pdf" -outputPath "C:\Users\t.b.ahmed\Desktop\outputPath"
 
 Write-Host "1st phase completed" -ForegroundColor Green
@@ -199,53 +200,6 @@ Write-Host "1st phase completed" -ForegroundColor Green
 
 function appendsql{
 
-}
-function AppendExorDB{
-    <#
-    This function will append the DB log or excel log (Master setup) based on the switch
-    #>
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $folderPath,
-
-        [Parameter(Mandatory=$False, ParameterSetName ="SQL")]
-        [switch]
-        $SQL,
-
-        [Parameter(Mandatory=$False, ParameterSetName ="Excel")]
-        [switch]
-        $Excel,
-
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [string]
-        $inputData
-
-
-    )
-
-    begin{
-        #split the data stream (since begin block is only invoked once and we will be fetching data from pipeline)
-        $inputNames = "filename1,filename2,filename3,filename4,filename5"
-        $splittedData = $inputData -split ","
-        $intialIndex = 0
-        $dataLength = $splittedData.Count
-        $parameterSetName = $PSCmdlet.ParameterSetName
-    }
-    process
-    {
- # get the data to be inserte        
-
-           switch ($parametersetname)
-           {
-               "SQL" {} #call sql insertion
-               "Excel" {} #call Excel insertion
-           }
-          # incrementing index to point to the next data in the array
-    }
-    end{
-        #dispose all open sessions
-    }
 }
 
 
