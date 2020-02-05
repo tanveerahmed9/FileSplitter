@@ -4,6 +4,8 @@ param (
   # add all parameters here when calling this module directly
 )
 
+#region libraries to be imported (dependancy management)
+
 function SortedFilesInFolder
  {
     <#
@@ -22,7 +24,7 @@ function SortedFilesInFolder
         )
     $sortedArray = Get-ChildItem -Path $folderPath | Where-Object Extension -EQ $Extension | Select-Object -ExpandProperty  Name | Sort-Object -Property Name -Descending   
     return $sortedArray
-}
+ }
 
 function MoveFiles{
 
@@ -151,14 +153,94 @@ function PreFileMigrationController{
 
 }
 
-preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -groupCount 2 -extension ".pdf" -outputPath "C:\Users\t.b.ahmed\Desktop\outputPath"
+preFileMigrationController -folderPath "C:\Users\t.b.ahmed\Desktop\Automation" -groupCount 3 -extension ".pdf" -outputPath "C:\Users\t.b.ahmed\Desktop\outputPath"
 
+Write-Host "1st phase completed" -ForegroundColor Green
 
-function AppendExcelorDB{
+function appendexcel{
+param(
+    # Parameter help description
+    [Parameter(Mandatory=$true)]
+    [string]
+    $fileName,
+
+    [Parameter(Mandatory=$true)]
+    [string]
+    $inputData
+)
+process{
+    if (Test-Path -Path $fileName){
+        get-help  Set-Row -Detailed 
+        $excelObject = New-object -TypeName OfficeOpenXml.ExcelPackage
+        $excelObject.File = "C:\Users\t.b.ahmed\Desktop\outputPath\MasterData.xlsx"
+        $excelObject.Workbook.Worksheets.Add("MasterData")
+        Set-Row -Worksheetname "MasterData"  -ExcelPackage $excelObject
+
+    }
+    else{
+        new-item -path $fileName | Out-Null
+        #create excel object for referencing 
+        $excelObject = New-Object OfficeOpenXml.ExcelPackage
+        $excelObject.File = "C:\Users\t.b.ahmed\Desktop\outputPath\MasterData.xlsx"
+        $excelObject.Workbook.Worksheets.Add("MasterData")
+        Set-ExcelRow -Value {"1,23,4:1,3,3:2"}  -ExcelPackage $excelObject -Worksheetname "MasterData"
+    }
+}
+
+}
+
+function appendsql{
+
+}
+function AppendExorDB{
     <#
     This function will append the DB log or excel log (Master setup) based on the switch
     #>
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $folderPath,
+
+        [Parameter(Mandatory=$False, ParameterSetName ="SQL")]
+        [switch]
+        $SQL,
+
+        [Parameter(Mandatory=$False, ParameterSetName ="Excel")]
+        [switch]
+        $Excel,
+
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]
+        $inputData
+
+
+    )
+
+    begin{
+        #split the data stream (since begin block is only invoked once and we will be fetching data from pipeline)
+        $inputData = "filename1,foldername1,size1;filename2,foldername1,size2"
+        $splittedData = $inputData -split ";"
+        $intialIndex = 0
+        $dataLength = $inputData.Length()
+        $parameterSetName = $PSCmdlet.ParameterSetName
+    }
+    process
+    {
+        while($intialIndex -lt $dataLength){
+           $insertedData = $splittedData[$initialIndex] # get the data to be inserted
+           switch ($parametersetname)
+           {
+               "SQL" {} #call sql insertion
+               "Excel" {} #call Excel insertion
+           }
+           $intialIndex +=1 # incrementing index to point to the next data in the array
+        }
+    }
+    end{
+        #dispose all open sessions
+    }
 }
+
 
 function VerifyFileName{
     <#
