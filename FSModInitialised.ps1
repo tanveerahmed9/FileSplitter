@@ -3,7 +3,6 @@
 param (
   # add all parameters here when calling this module directly
 )
-
 #region libraries to be imported (dependancy management)
 function appendexcel{
     param(
@@ -18,13 +17,17 @@ function appendexcel{
     
         [Parameter(Mandatory=$true)]
         [string]
-        $columnIndex
+        $columnIndex,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $rowIndex
     )
     
     
     process{
         if (Test-Path -Path $fileName){
-            $inputData  | Export-Excel -Path  $fileName -WorksheetName "MasterData" -StartColumn $columnIndex -Show -Append
+            $inputData  | Export-Excel -Path  $fileName -WorksheetName "MasterData" -StartColumn $columnIndex -StartRow $rowIndex
         }
         else{ # creating master file for the first time
             #region add column to excel
@@ -32,10 +35,10 @@ function appendexcel{
             $columNames = New-Object -TypeName PSObject
             $d = [ordered]@{Name="";group="";Size=""}
             $columNames| Add-Member -NotePropertyMembers $d -TypeName Asset
-            $columNames | Export-Excel -Path  $fileName -WorksheetName "MasterData"  #add the column name to the new file 
+            $columNames | Export-Excel -Path  $fileName -WorksheetName "MasterData"  -BoldTopRow  #add the column name to the new file 
             
             #endregion
-            $inputData  | Export-Excel -Path  $fileName -WorksheetName "MasterData" -StartColumn $columnIndex -AutoSize  -Append #append the first data
+            $inputData  | Export-Excel -Path  $fileName -WorksheetName "MasterData" -StartColumn $columnIndex -StartRow $finalIndex -AutoSize   #append the first data
         }
     }
     
@@ -54,9 +57,14 @@ function SortedFilesInFolder
 
         [Parameter(Mandatory=$true)]
         [string]
-        $Extension
+        $Extension,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $property
+
         )
-    $sortedArray = Get-ChildItem -Path $folderPath | Where-Object Extension -EQ $Extension | Select-Object -ExpandProperty  Name | Sort-Object -Property Name -Descending   
+    $sortedArray = Get-ChildItem -Path $folderPath | Where-Object Extension -EQ $Extension | Select-Object -ExpandProperty  $property | Sort-Object -Descending   
     return $sortedArray
  }
 
@@ -111,9 +119,9 @@ function PreFileMigrationController{
     [string]
     $namingConvention,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$false)]
     [string]
-    $outputPath
+    $outputPath = "./outputPath"
     )
     <# what it does
     fetch following parameters as input 
@@ -140,7 +148,7 @@ function PreFileMigrationController{
     # check if folder is present in the machine
     if (!(test-path -path $folderPath)){
         #call Fatal error 
-        fatalerror
+        fatalerror -message "Folder not present , please provide the correct path and try again"
     }
     
      $totalFileCount = (Get-ChildItem -Path $folderPath | Select-Object Extension | Where-Object Extension -EQ "$extension").Count
@@ -156,7 +164,9 @@ function PreFileMigrationController{
     process{
           #create the child FD
 
-          $sortedFileArray = sortedFilesInFolder  -folderPath $folderPath -Extension $extension # sortedarray of files
+          $sortedFilenameArray = sortedFilesInFolder  -folderPath $folderPath -Extension $extension -property Name # sortedarray of files
+          $sortedFileSizeArray = SortedFilesInFolder -folderPath $folderPath -Extension $extension -property length
+
           $tempFolderCount = $totalFolders 
           #region temp folder creation in the output path
           while ($tempFolderCount -gt 0)
@@ -170,18 +180,31 @@ function PreFileMigrationController{
           #region extracting subarray and passing to moveFile
           $initialIndex = 0
           $destfolderIndex = 0
-          while ($initialIndex -le $sortedFileArray.count)
-          {
+          $rowIndex = $initialIndex + 2 ## for setting row in appendExcelfunction (first two row rsrvd for colum and bgap)
+          while ($initialIndex -lt ($sortedFilenameArray.count))          {
           $destfolderIndex += 1
+          $currentFolderbatch = "Premigration_$destfolderIndex"
           $finalIndex = $initialIndex + $groupCount - 1
-          $subFileArray = @()
-          $subFileArray = $sortedFileArray[$initialIndex..$finalIndex] # extracted subsection to move to nth folder
-          MoveFiles -folderPath $folderPath -outputPath $outputPath -fileArray $subFileArray -folderIndex $destfolderIndex # move file called to move the section of files
-          $initialIndex += $groupCount # moving the initial index pointer to current index of the array
+          if ($finalIndex -gt $sortedFilenameArray.count){ # adjusting the final index in case of overflow
+            $finalIndex = $sortedFilenameArray.Count -1 
+          }
+          $subFileNameArray = @()
+          $subFileNameArray = $sortedFilenameArray[$initialIndex..$finalIndex] # extracted subsection of name to move to nth folder
+          $subfileSizeArray = $sortedFileSizeArray[$initialIndex..$finalIndex] # extracted subsection of size 
+          $subFolderGroupArray = [System.Collections.ArrayList]::new()
+          for ($i = $initialIndex ; $i -le $finalIndex; $i = $i + 1){
+              $subFolderGroupArray.Add($currentFolderbatch)
+          }
+          MoveFiles -folderPath $folderPath -outputPath $outputPath -fileArray $subFileNameArray -folderIndex $destfolderIndex # move file called to move the section of files
           
           #data chunk to be transmitted for excel of sql data addition
-          appendexcel -fileName "$outputPath/MasterData.xlsx" -inputData $subFileArray -columnIndex 1 
-
+          appendexcel  -fileName "$outputPath/MasterData.xlsx"  -inputData $subFileNameArray -columnIndex 1 -rowIndex $rowIndex
+          appendexcel -fileName "$outputPath/MasterData.xlsx"  -inputData $subFolderGroupArray  -columnIndex 2 -rowIndex $rowIndex
+          appendexcel -fileName "$outputPath/MasterData.xlsx"  -inputData $subfileSizeArray  -columnIndex 3 -rowIndex $rowIndex
+         
+          $rowIndex += $groupCount
+          $initialIndex += $groupCount
+          $finalIndex += $groupCount # moving the initial index pointer to current index of the array
           }
           #endregion
     }
@@ -205,7 +228,7 @@ function appendsql{
 
 function VerifyFileName{
     <#
-    This function will verify the file naming convetion before moving to a folder location
+    This function will verify the file naming convetion before moving to a folder location 
     #>
 }
 
@@ -224,6 +247,11 @@ function fatalerror{
     <#
     in Case of fatal error objects will be disposed here and the execution will stop
     #>
+    param (
+        [Parameter()]
+        [string]
+        $message
+    )
 }
 
 <#
