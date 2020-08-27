@@ -1,0 +1,78 @@
+---
+Country:
+  - NL
+  - DE
+  - PL
+  - FR
+  - UK
+  - SE
+  - FI
+  - DK
+DocumentType:
+  - "Benefits data"
+  - "Employment Contract"
+  - "Disciplinary"
+  - "Exit"
+  - "Health"
+  - "Leave of absence"
+  - "Payroll"
+  - "Pensions"
+  - "Personal Data"
+  - "Personal ID Dcouments"
+  - "Personal Development"
+  - "References"
+  - "Reward"
+  - "Migration"
+  - "Exposures"
+  - "DE Pensions"
+Benefits data:
+- Capital forming
+- Car
+- Children Benefits
+- Discount
+- Health
+- Insurance
+- Jubilee
+- Loan
+- Public Transport
+- Social Benefit
+- Social Fund
+- Migrated Documents
+Employment Contract:
+- Work Contract
+- Obligations
+- Contract Amendments
+- Apprenticeship Contract
+- Promotion Demotion Lateral
+- Change of working hours
+- Contract End Extension
+- Transfer
+- Location change
+- Salary Change
+- Suspension
+- Partial Retirement
+- Workers Council Approvals
+- Sabatical Leave
+- Military Leave
+- Commuters
+- International Mobility
+- Seniority Date
+- Sideline job
+- Migrated Documents
+Disciplinary:
+- Disciplinary documents
+Exit:
+- Termination Letter 
+- Workers Council Approvals
+- Termination Agreement
+- Exit Checklist
+- Final Package Calculation
+- Migrated Documents
+Health:
+- Suitability Examination
+- Challenge documents
+- Reintegration
+- Migrated Documents
+
+
+
