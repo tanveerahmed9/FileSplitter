@@ -14,7 +14,7 @@
 
 # )
 
-
+Measure-Command{
 function _movetofailedValidationFolder{
 param (
     [Parameter(Mandatory=$true)]
@@ -41,7 +41,7 @@ function _ValidateUnderscores{
     )
     process{
         $charCount = ($stringtoValidate.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
-        Write-Host "number of underscores are $charcount"
+        #Write-Host "number of underscores are $charcount"
         if ([int]$charCount -ne 9)
         {return "FAILED"}
         else{
@@ -112,37 +112,37 @@ process{
     write-host "starting the validation" -ForegroundColor Blue
     foreach ($currentfile in $filesfromSource) {
         $filename = $currentfile.Name
-        write-host "Current File selected is $filename" -ForegroundColor Blue
+      #  write-host "Current File selected is $filename" -ForegroundColor Blue
         #region Underscore validation
-        Write-Host "validating Underscore count..." -ForegroundColor Blue
+       # Write-Host "validating Underscore count..." -ForegroundColor Blue
         $ValidateUnderscores_return = _ValidateUnderscores -stringtoValidate $filename
         if ($ValidateUnderscores_return -eq "SUCCESS"){
-            Write-Host "Underscore test passed"
+           # Write-Host "Underscore test passed"
         }
         else{
-            write-host "Underscore test failed moving file to the failed directory" -ForegroundColor red
+           # write-host "Underscore test failed moving file to the failed directory" -ForegroundColor red
             _movetofailedValidationFolder -fileName $currentfile.FullName
-            Write-Host "File moved . no further validation check done moving to next iten"
+            #Write-Host "File moved . no further validation check done moving to next iten"
             continue
         }
 
         #endregion
 
-        #region docuement type test
-        write-host "write logic for group test here"
-        #endregion
+        # #region docuement type test
+        # write-host "write logic for group test here"
+        # #endregion
 
-        #region sub dcument type test
-        Write-Host "write logic for sub-group test here"
-        #endregion
+        # #region sub dcument type test
+        # Write-Host "write logic for sub-group test here"
+        # #endregion
         
-        #region employee ID validation
-        Write-Host "ID validation code to be written here"
-        #endregion
+        # #region employee ID validation
+        # Write-Host "ID validation code to be written here"
+        # #endregion
 
-        #region date format validation
-        Write-Host "date validation to be written here"
-        #endregion
+        # #region date format validation
+        # Write-Host "date validation to be written here"
+        # #endregion
         #
     }
     
@@ -151,10 +151,10 @@ process{
 
 }
 end{  
-   
+    Write-Host "finished" -ForegroundColor Green
     # call the file mover code once all validation is done
 
  }
 }
 Write-Host "starting"
-ValidationMain -sourcePath "C:\Terraform" -destinationpath "C:\new_terraform" 
+ValidationMain -sourcePath "C:\Terraform" -destinationpath "C:\new_terraform" }
