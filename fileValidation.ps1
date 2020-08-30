@@ -189,10 +189,10 @@ process{
     write-host "starting the validation" -ForegroundColor Blue
     foreach ($currentfile in $filesfromSource) {
         $filename = $currentfile.Name
-      #  write-host "Current File selected is $filename" -ForegroundColor Blue
+        write-verbose "Current File selected is $filename" 
         #region Underscore validation
        # Write-Host "validating Underscore count..." -ForegroundColor Blue
-        $ValidateUnderscores_return = _ValidateUnderscores -stringtoValidate $filename
+        $ValidateUnderscores_return = _ValidateUnderscores -stringtoValidate $filename 
         if ($ValidateUnderscores_return -eq "SUCCESS"){
            # Write-Host "Underscore test passed"
            Write-Verbose "UnderScore test passed"
@@ -205,14 +205,30 @@ process{
         }
 
         #endregion
-
-        #region Country Code Validation
-
-        #endregion
          
         #region assign file variables for validation
         [pscustomobject]$validationCustomObject = _assignIndividualIdentifier -stringforIdentifier $filename
         
+        #endregion
+
+        #region Country Code Validation
+          $currentCountryCode  = $validationCustomObject.countyCode
+          $allcountryCodes = $yamlContent.Country
+          # match the country code against the config config codes
+          if($currentCountryCode){
+          $countryCodeValidation = _GroupValidation -stringToMatch $currentCountryCode -collectiontoMatchgainst $allcountryCodes
+          if ($countryCodeValidation -eq "SUCCESS"){
+            Write-Verbose "Passed the country validation test for file $currentfile"
+          }
+          else{
+            Write-Verbose "failed the country validation test for file $currentfile  moving to failed folder"
+            _movetofailedValidationFolder -filename $currentfile.FullName
+            continue
+          }
+         }
+          else{
+              #country code empty , failed country code validation , since 
+          }
         #endregion
 
         #region docuement type test
@@ -286,6 +302,7 @@ end{
  }
 }
 Write-Host "starting"
-ValidationMain -sourcePath "C:\Terraform" -destinationpath "C:\new_terraform" }
+ValidationMain -sourcePath "C:\Terraform" -destinationpath "C:\new_terraform" 
+}
 
 
