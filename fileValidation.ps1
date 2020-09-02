@@ -17,8 +17,8 @@
 #region Libraries, dependancies
 Install-Module powershell-yaml -ErrorAction SilentlyContinue
 #endregion
-
-Measure-Command{
+Install-Module PSProfiler -ea SilentlyContinue
+Measure-Script{
 function _movetofailedValidationFolder{
 param (
     [Parameter(Mandatory=$true)]
@@ -303,6 +303,8 @@ end{
 }
 Write-Host "starting"
 ValidationMain -sourcePath "C:\Terraform" -destinationpath "C:\new_terraform" 
-}
+} | Tee-Object ./report.txt
+
+Invoke-Expression ./report.txt
 
 
