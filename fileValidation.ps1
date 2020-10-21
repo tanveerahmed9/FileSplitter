@@ -302,7 +302,7 @@ end{
  }
 }
 Write-Host "starting"
-ValidationMain -sourcePath "C:\Terraform" -destinationpath "C:\new_terraform" 
+ValidationMain -sourcePath $sourcePath -destinationpath $destinationPath
 
 
 
