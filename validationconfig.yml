@@ -1,4 +1,3 @@
----
 Country:
   - NL
   - DE
@@ -39,102 +38,99 @@ Benefits data:
   - "Social Fund"
   - "Migrated Documents"
 Employment Contract:
-  - Work Contract
-  - Obligations
-  - Contract Amendments
-  - Apprenticeship Contract
-  - Promotion Demotion Lateral
-  - Change of working hours
-  - Contract End Extension
-  - Transfer
-  - Location change
-  - Salary Change
-  - Suspension
-  - Partial Retirement
-  - Workers Council Approvals
-  - Sabatical Leave
-  - Military Leave
-  - Commuters
-  - International Mobility
-  - Seniority Date
-  - Sideline job
-  - Migrated Documents
-  Disciplinary:
-  - Disciplinary documents
-  Exit:
-  - Termination Letter 
-  - Workers Council Approvals
-  - Termination Agreement
-  - Exit Checklist
-  - Final Package Calculation
-  - Migrated Documents
-  Health:
-  - Suitability Examination
-  - Challenge documents
-  - Reintegration
-  - Migrated Documents
-  Leave of absence:
-  - Request for Leave
-  - Doctor Certificate
-  - Sickness Accident Cure
-  - Maternity Parental Leave
-  - Care Leave
-  - Educational Leave
-  - Migrated Documents
-  Payroll:
-  - Deferred Compensation
-  - Tax
-  - Garnishment
-  - Social Insurance
-  - Manual Payments
-  - Payslips
-  - Insolvance Insurance
-  - Annual Statements
-  - Migrated Documents
-  Pensions:
-  - Entitlements
-  - Pension Payment
-  - Pension Payment for surviving dependants
-  - Salary Conversion into Pension
-  - Pension Rights Adjustment
-  - Migrated Documents
+  - "Work Contract"
+  - "Obligations"
+  - "Contract Amendments"
+  - "Apprenticeship Contract"
+  - "Promotion Demotion Lateral"
+  - "Change of working hours"
+  - "Contract End Extension"
+  - "Transfer"
+  - "Location change"
+  - "Salary Change"
+  - "Suspension"
+  - "Partial Retirement"
+  - "Workers Council Approvals"
+  - "Sabatical Leave"
+  - "Military Leave"
+  - "Commuters"
+  - "International Mobility"
+  - "Seniority Date"
+  - "Sideline job"
+  - "Migrated Documents"
+Disciplinary:
+  - "Disciplinary documents"
+Exit:
+  - "Termination Letter"
+  - "Workers Council Approvals"
+  - "Termination Agreement"
+  - "Exit Checklist"
+  - "Final Package Calculation"
+  - "Migrated Documents"
+Health:
+  - "Suitability Examination"
+  - "Challenge documents"
+  - "Reintegration"
+  - "Migrated Documents"
+Leave of absence:
+  - "Request for Leave"
+  - "Doctor Certificate"
+  - "Sickness Accident Cure"
+  - "Maternity Parental Leave"
+  - "Care Leave"
+  - "Educational Leave"
+  - "Migrated Documents"
+Payroll:
+  - "Deferred Compensation"
+  - "Tax"
+  - "Garnishment"
+  - "Social Insurance"
+  - "Manual Payments"
+  - "Payslips"
+  - "Insolvance Insurance"
+  - "Annual Statements"
+  - "Migrated Documents"
+Pensions:
+  - "Entitlements"
+  - "Pension Payment"
+  - "Pension Payment for surviving dependants"
+  - "Salary Conversion into Pension"
+  - "Pension Rights Adjustment"
+  - "Migrated Documents"
 Personal Data:
-  - Data Change
-  - Dependants
-  - Migrated Documents
+  - "Data Change"
+  - "Dependants"
+  - "Migrated Documents"
 Personal ID Documents:
-  - Identification
-  - Work Authorization
-  - Migrated Documents
+  - "Identification"
+  - "Work Authorization"
+  - "Migrated Documents"
 Personal Development:
-  - Development Agreement
-  - Diplomas or Certificates
-  - Performance Agreement
-  - Employee Assessments
-  - Assessment Results
-  - Migrated Documents
+  - "Development Agreement"
+  - "Diplomas or Certificates"
+  - "Performance Agreement"
+  - "Employee Assessments"
+  - "Assessment Results"
+  - "Migrated Documents"
 References :
-  - Certificates
-  - Testimonials
-  - Migrated Documents
+  - "Certificates"
+  - "Testimonials"
+  - "Migrated Documents"
 Reward:
-  - Annual Pay and Salary Review
-  - Short Term Incentives
-  - Individual Bonus Payment
-  - Collective Bonus Payment
-  - Migrated Documents
+  - "Annual Pay and Salary Review"
+  - "Short Term Incentives"
+  - "Individual Bonus Payment"
+  - "Collective Bonus Payment"
+  - "Migrated Documents"
 Migration:
-  - Documents from Legacy System
+  - "Documents from Legacy System"
 Exposures:
-  - Radiation exposure 
-  - Asbestos Statement
-  - Migrated Documents
+  - "Radiation exposure"
+  - "Asbestos Statement"
+  - "Migrated Documents"
 DE Pensions:
-  - Direct Insurance
-  - Declaration Beneficiary
-  - Correspondence
-  - Salary Conversion into Pension
-  - Migrated Documents
-
-
-
+  - "Direct Insurance"
+  - "Declaration Beneficiary"
+  - "Correspondence"
+  - "Salary Conversion into Pension"
+  - "Migrated Documents"
