@@ -53,10 +53,10 @@ Class FileValidator{
      }
      
      #this function validates the number of 
-    hidden ValidatePath(){
-        if (!(test-path [FileValidator]::sourcepath) -or !(test-path [|FileValidator]::destinationPath))
+    hidden _ValidatePath(){
+        if (!(!(test-path [FileValidator]::sourcepath) -or !(test-path [|FileValidator]::destinationPath)))
         {
-            throw "Source or destination path incorrect"
+            throw "Source or Destination path Incorrect"
         }
     }
 
@@ -108,14 +108,25 @@ Class FileValidator{
                     
                 }
             
-    FileValidator(){ # initial constructor to validate all the data against a file
+    FileValidator($sourcePath,$destinationPath){ # 
+       # initialise static variable source and destination path
+        [FileValidator]::sourcePath = $sourcePath
+        [FileValidator]::destinationPath = $destinationPath
+        #step 1
+        $this._ValidatePath() # validates the internal member source and destination path
+        #step 2
+
 
     }
+    }
+    
+    Dispose(){
+        
     }
    #endregion
     
 
-    main{ 
+ main{ 
     param (
             [Parameter(Mandatory=$true)]
             [string]
@@ -131,9 +142,8 @@ Class FileValidator{
         
      )# main function which will inetarct with all other 
     begin{
+        $FSObject = [FileValidator]::new("C:\Classes and Runspaces", "C:\FS")
         
-      # va
-
     }
     process{
         #region fetch the child items of the Souce folder
