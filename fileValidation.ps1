@@ -13,135 +13,81 @@ param (
     $country = "NL" # default it to netherland as the first release is focussed on netherland
 
 )
+#Requires -RunAsAdministrator
 
 #region Libraries, dependancies
-Import-Module powershell-yaml -ErrorAction SilentlyContinue
+#Import-Module powershell-yaml -ErrorAction SilentlyContinue
+#required Powershell-yaml
 #endregion
 
-#region functions
+#region Class
 Class FileSplitter{
+   
+    #region class property
+    [string]$filename;
+    [string]$stringtoValidate;
+    static [string]$failedFolderpath;
+    static $validateCount = 9;
+    static [string]$commonLogs;
+    static $collectiontoMatchgainst;
+    [string] $validationResult;
+    [System.Management.Automation.PSCustomObject] $fileCustomObject; # to store the current file separated data
 
-    
-    hidden  _movetofailedValidationFolder(){
-        param (
-            [Parameter(Mandatory=$true)]
-            [string]
-            $fileName
-        )
-        process{
+    #endregion
+
+    #region class method
+     _movetofailedValidationFolder(){
             try{
-            Move-Item -Path $fileName -Destination $Global:failedFolderpath -ErrorAction SilentlyContinue| Out-Null
-            
-        }
+            Move-Item -Path $this.fileName -Destination [FileSplitter]::failedFolderpath -ErrorAction SilentlyContinue| Out-Null     
+           }
             catch{
-                Write-Host "file $filename could not be moved to failed folder" -BackgroundColor Yellow
-                return "Failed"
+                Write-Verbose "file $($this.filename) could not be moved to failed folder" -BackgroundColor Yellow
+                Write-Verbose "Failed"
             }
         }
-        }
-
-    hidden _ValidateUnderscores(){
-    
-            param (
-                [Parameter(Mandatory=$true)]
-                [string]
-                $stringtoValidate
-            )
-            process{
-                $charCount = ($stringtoValidate.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
+     _writeFilelog(){
+        
+     }
+     #this function validates the number of 
+    hidden _ValidateUnderscore(){
+                try
+                  {
+                $charCount = ($this.stringtoValidate.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
                 #Write-Host "number of underscores are $charcount"
-                if ([int]$charCount -ne 9)
-                {return "FAILED"}
+                if ([int]$charCount -ne [FileSplitter]::validateCount)
+                {$this.validationResult = "FAILED"}
                 else{
-                    return "SUCCESS"
+                    $this.validationResult = "SUCCESS"
                 }
             }
+            catch{
+
+            }
+            
         }
     
-    hidden  _dateFormatValidation (){ # second release
-            param (
-                [Parameter()]
-                [datetime]
-                $dateInstance = "",
-               
-                [Parameter(Mandatory=$true)]
-                [string]
-                [ValidateSet]
-                $dateformat 
-            )
-             begin{
-                $dateInstanceconcert = "20041204"
-                $dateformat = "YYYYMMDD"
-                Get-Date $dateInstanceconcert
-             }
-            process{
-        
-            }
-            end{
-        
-            }
-        }
-
-    hidden _dateFormatValidation(){ # second release
-            param (
-                [Parameter()]
-                [datetime]
-                $dateInstance = "",
-               
-                [Parameter(Mandatory=$true)]
-                [string]
-                [ValidateSet]
-                $dateformat 
-            )
-             begin{
-                $dateInstanceconcert = "20041204"
-                $dateformat = "YYYYMMDD"
-                Get-Date $dateInstanceconcert
-             }
-            process{
-        
-            }
-            end{
-        
-            }
+    hidden  _dateFormatValidation(){ # second release
+           
         }
 
     hidden _GroupValidation(){
-
-            param (
-                [Parameter(Mandatory=$true)]
-                [string]
-                $stringToMatch,
             
-                [Parameter(Mandatory=$true)]
-                [System.Collections.ArrayList]
-                $collectiontoMatchgainst
-            )
-            
-            process{
-                 if ($collectiontoMatchgainst -ccontains $stringToMatch)
+                 if ($this.collectiontoMatchgainst -ccontains $this.stringToMatch)
                  {
-                     return "SUCCESS"
+                     
                  }
             
                  else{
-                     return "FAILED"
+                    $this.validationResult = "SUCCESS"
                  }
-            }
+                }
             
-            }
     
     hidden _assignIndividualIdentifier(){
-                # Parameter help description
-                param(
-                [Parameter(Mandatory=$true)]
-                [string]
-                $stringforIdentifier)
-            
-                process{
-                    $splittedarray = $filename -split "_"
+    
+                    $splittedarray = $this.filename -split "_" 
                     #create custom object here for the fields which require validation
-                    $fileCustomObject = [PSCustomObject]@{
+                    $this.FileCustomObject = [PSCustomObject]@{
                         countyCode = $splittedarray[0]
                         employeeID = $splittedarray[1]
                         documentType = $splittedarray[2]
@@ -149,21 +95,13 @@ Class FileSplitter{
                         documentDate = $splittedarray[5]
                         ingestionDate = $splittedarray[6]
                     }
-                    return $fileCustomObject
+                    
                 }
-            }
-   
-    FileSplitter() # default constructor
-    {
-
     }
-}
+   #endregion
+    
 
-function ValidationMain{
-
-}
-
-   function ValidationMain{ 
+    main{ 
     param (
             [Parameter(Mandatory=$true)]
             [string]
