@@ -21,9 +21,11 @@ param (
 #endregion
 
 #region Class
-Class FileSplitter{
+Class FileValidator{
    
     #region class property
+    static [string]$sourcePath;
+    static [string]$destinationPath
     [string]$filename;
     [string]$stringtoValidate;
     static [string]$failedFolderpath;
@@ -36,25 +38,34 @@ Class FileSplitter{
     #endregion
 
     #region class method
-     _movetofailedValidationFolder(){
+    _movetofailedValidationFolder(){
             try{
-            Move-Item -Path $this.fileName -Destination [FileSplitter]::failedFolderpath -ErrorAction SilentlyContinue| Out-Null     
+            Move-Item -Path $this.fileName -Destination [FileValidator]::failedFolderpath -ErrorAction SilentlyContinue| Out-Null     
            }
             catch{
                 Write-Verbose "file $($this.filename) could not be moved to failed folder" -BackgroundColor Yellow
                 Write-Verbose "Failed"
             }
         }
+
      _writeFilelog(){
-        
+        write-log "File Moved $($this.filename) `r"
      }
+     
      #this function validates the number of 
+    hidden ValidatePath(){
+        if (!(test-path [FileValidator]::sourcepath) -or !(test-path [|FileValidator]::destinationPath))
+        {
+            throw "Source or destination path incorrect"
+        }
+    }
+
     hidden _ValidateUnderscore(){
                 try
                   {
                 $charCount = ($this.stringtoValidate.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
                 #Write-Host "number of underscores are $charcount"
-                if ([int]$charCount -ne [FileSplitter]::validateCount)
+                if ([int]$charCount -ne [FileValidator]::validateCount)
                 {$this.validationResult = "FAILED"}
                 else{
                     $this.validationResult = "SUCCESS"
@@ -74,15 +85,14 @@ Class FileSplitter{
             
                  if ($this.collectiontoMatchgainst -ccontains $this.stringToMatch)
                  {
-                     
+                     $this.validationResult = "SUCCESS"
                  }
             
                  else{
-                    $this.validationResult = "SUCCESS"
+                    $this.validationResult = "FAILED"
                  }
                 }
             
-    
     hidden _assignIndividualIdentifier(){
     
                     $splittedarray = $this.filename -split "_" 
@@ -97,6 +107,10 @@ Class FileSplitter{
                     }
                     
                 }
+            
+    FileValidator(){ # initial constructor to validate all the data against a file
+
+    }
     }
    #endregion
     
@@ -113,42 +127,12 @@ Class FileSplitter{
         
             [Parameter(Mandatory=$false)]
             [string]
-            $country = "NL" # default it to netherland as the first release is focussed on netherland
+            $country  # default it to netherland as the first release is focussed on netherland
         
      )# main function which will inetarct with all other 
     begin{
         
-        #region Source and destination validation
-        Write-Host "Validating source and destinaion" -ForegroundColor Blue
-        if (!(test-path $sourcePath)){
-            throw "Source path not in the host , please provide the correct source path"
-        }
-        Write-Host "Source path found" -ForegroundColor Green
-        if (!(Test-Path $destinationPath)){
-            throw "Destination path not in the host , please provide the correct Destination path" 
-        }
-        Write-Host "destination path found" -ForegroundColor Green
-        #endregion
-
-        #region failed validation folder creation
-        try{
-            Write-Host "Creating a failed validation folder"
-            New-Item -ItemType Directory -Path $sourcePath -Name "FailedValidation" -ErrorAction SilentlyContinue
-            Write-Host "Created the failed validation folder" -ForegroundColor Green
-            $Global:failedFolderpath = "$sourcePath\FailedValidation"
-        }
-        catch{
-            throw "issue while creaing a failed validation folder"
-        }
-        #endregion
-
-        #region load global config variables
-        # the value of the config will be used in the validation 
-        $global:yamlContent = Get-Content -Path ./validationconfig.yml -Raw
-        $global:yamlContent = $yamlContent | ConvertFrom-Yaml # converting from YAML to hast table use $yamlContent.gettype() and check out memebers to understand more
-        $global:progressInitial = 0 # progress tracker
-        [float]$global:progressPercentage = 0 # progress tracker
-        #endregion
+      # va
 
     }
     process{
