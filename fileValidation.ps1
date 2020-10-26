@@ -1,18 +1,18 @@
 # this will be the wrapper for 1st release 
-# param (
-#     [Parameter(Mandatory=$true)]
-#     [string]
-#     $sourcePath,
+param (
+    [Parameter(Mandatory=$true)]
+    [string]
+    $sourcePath,
 
-#     [Parameter(Mandatory=$true)]
-#     [string]
-#     $destinationPath,
+    [Parameter(Mandatory=$true)]
+    [string]
+    $destinationPath,
 
-#     [Parameter(Mandatory=$false)]
-#     [string]
-#     $country = "NL" # default it to netherland as the first release is focussed on netherland
+    [Parameter(Mandatory=$false)]
+    [string]
+    $country = "NL" # default it to netherland as the first release is focussed on netherland
 
-# )
+)
 
 #region Libraries, dependancies
 Import-Module powershell-yaml -ErrorAction SilentlyContinue
@@ -28,7 +28,7 @@ param (
 process{
     try{
     Move-Item -Path $fileName -Destination $Global:failedFolderpath -ErrorAction SilentlyContinue| Out-Null
-    return "SUCCESS"
+    
 }
     catch{
         Write-Host "file $filename could not be moved to failed folder" -BackgroundColor Yellow
@@ -169,7 +169,8 @@ begin{
        # the value of the config will be used in the validation 
        $global:yamlContent = Get-Content -Path ./validationconfig.yml -Raw
        $global:yamlContent = $yamlContent | ConvertFrom-Yaml # converting from YAML to hast table use $yamlContent.gettype() and check out memebers to understand more
-
+       $global:progressInitial = 0 # progress tracker
+       [float]$global:progressPercentage = 0 # progress tracker
     #endregion
 
 }
@@ -187,7 +188,14 @@ process{
 
     #region validation mainK
     write-host "starting the validation" -ForegroundColor Blue
+    $totalFiles = $filesfromSource.count
+    write-host "total files are $totalfiles"
+    $progressInitial = $totalFiles + 1
     foreach ($currentfile in $filesfromSource) {
+        $progressInitial -= 1
+        $progressPercentage = (($totalFiles-$progressInitial)/$totalFiles)*100
+        $progressPercentage = [math]::Round($progressPercentage,2)
+        Write-Progress -Activity "Scanning in Progress" -PercentComplete $progressPercentage -Status "$progressPercentage% completed";
         $filename = $currentfile.Name
         write-verbose "Current File selected is $filename" 
         #region Underscore validation
