@@ -14,7 +14,6 @@ param (
 
 )
 #Requires -RunAsAdministrator
-
 #region Libraries, dependancies
 #Import-Module powershell-yaml -ErrorAction SilentlyContinue
 #required Powershell-yaml
@@ -24,22 +23,22 @@ param (
 Class FileValidator{
    
     #region class property
-    static [string]$yamlPath;
+    static [string]$yamlPath
+    static [System.Collections.Hashtable]$yamlContent;
     static [string]$sourcePath;
     static [string]$destinationPath
     [string]$filename;
-    [string]$stringtoValidate;
     static [string]$failedFolderpath;
     static $validateCount = 9;
     static [string]$commonLogs;
     static $collectiontoMatchgainst;
     [string] $validationResult;
     [System.Management.Automation.PSCustomObject] $fileCustomObject; # to store the current file separated data
-
+    
     #endregion
 
     #region class method
-    _movetofailedValidationFolder(){
+    hidden _movetofailedValidationFolder(){
             try{
             Move-Item -Path $this.fileName -Destination [FileValidator]::failedFolderpath -ErrorAction SilentlyContinue| Out-Null     
            }
@@ -49,7 +48,7 @@ Class FileValidator{
             }
         }
 
-     _writeFilelog(){
+    hidden _writeFilelog(){
         write-log "File Moved $($this.filename) `r"
      }
      
@@ -64,7 +63,7 @@ Class FileValidator{
     hidden _ValidateUnderscore(){
                 try
                 {
-                $charCount = ($this.stringtoValidate.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
+                $charCount = ($this.filename.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
                 #Write-Host "number of underscores are $charcount"
                 if ([int]$charCount -ne [FileValidator]::validateCount)
                 {$this.validationResult = "FAILED"}
@@ -77,20 +76,36 @@ Class FileValidator{
             }
             
         }
-    
+
+    hidden _loadconfig(){
+        write-host $PSScriptRoot
+         [FileValidator]::yamlPath = $PSScriptRoot + "\config.yml"
+         $yamlPath_ = [FileValidator]::yamlPath
+        if (!(test-path "$yamlPath_")) # when YAM does not exists
+        {
+            throw "Config File not found , please add the config file (in the same path) and then re-initiate"
+        }
+        else{
+            $yamlContentRaw = Get-Content -Path "$yamlPath_" -Raw -ErrorAction Stop
+            [FileValidator]::yamlContent = $yamlContentRaw | ConvertFrom-Yaml
+        }
+    }
+
     hidden  _dateFormatValidation(){ # second release
            
-        }
+    }
 
-    hidden _GroupValidation(){
+    hidden _GroupValidation([string]$toMatch){
             
-                 if ($this.collectiontoMatchgainst -ccontains $this.stringToMatch)
+                 if ($this.collectiontoMatchgainst -ccontains $toMatch)
                  {
                      $this.validationResult = "SUCCESS"
                  }
             
                  else{
                     $this.validationResult = "FAILED"
+                    _writeFilelog
+                    _movetofailedValidationFolder 
                  }
                 }
             
@@ -111,19 +126,27 @@ Class FileValidator{
             
     FileValidator($sourcePath,$destinationPath){ # without YAMl file explicitly defined
        # initialise static variable source and destination path
-
+        # assignment 
         [FileValidator]::sourcePath = $sourcePath
         [FileValidator]::destinationPath = $destinationPath
-        #step 1
+        #tasks
         $this._ValidatePath() # validates the internal member source and destination path
-        #step 2
-
+        $this._loadconfig() # loads the config data to be available to all the instances of the class
+        
     }
 
     FileValidator($sourcePath,$destinationPath,$yamlPath) # with Yaml file explicitly defined
     {
         [FileValidator]::sourcePath = $sourcePath
         [FileValidator]::destinationPath = $destinationPath  
+    }
+
+    validate(){ # main function to validate all the steps
+      # step 1 validate underscores
+      _ValidateUnderscore 
+
+      # step 2 country code validation
+      
     }
 
     }
@@ -147,19 +170,22 @@ Class FileValidator{
         
     #  )# main function which will inetarct with all other 
     begin{
-        $FSObject2 = [FileValidator]::new("C:\Classes and Runspaceslll", "C:\FjjjS") # constructor without passing the YAMl
+        # initialised once 
+        $FileInitializer = [FileValidator]::new("C:\Intel", "C:\Intel") # constructor without passing the YAMl
+        $filesfromSource = Get-ChildItem $sourcePath -ErrorAction Stop  -File
+        Write-verbose "file fetch completed" -ForegroundColor Green
         
     }
     process{
         #region fetch the child items of the Souce folder
         Write-Host "fetching files from the source folder" -ForegroundColor Blue
         try{
-        $filesfromSource = Get-ChildItem $sourcePath -ErrorAction Stop  -File
+        
         }
         catch{
         throw "error while fetching child item of the source path $($_.exception.message)"
         }
-        Write-Host "file fetch completed" -ForegroundColor Green
+        
         #endregion
 
         #region validation mainK
@@ -286,11 +312,8 @@ Class FileValidator{
     }
 }    
 
-
-
+main
 #endregion
-Write-Host "starting"
-main 
 
 
 
