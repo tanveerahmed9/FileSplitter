@@ -24,6 +24,7 @@ param (
 Class FileValidator{
    
     #region class property
+    static [string]$yamlPath;
     static [string]$sourcePath;
     static [string]$destinationPath
     [string]$filename;
@@ -54,7 +55,7 @@ Class FileValidator{
      
      #this function validates the number of 
     hidden _ValidatePath(){
-        if (!(!(test-path [FileValidator]::sourcepath) -or !(test-path [|FileValidator]::destinationPath)))
+        if (!(!(test-path [FileValidator]::sourcepath) -or !(test-path [FileValidator]::destinationPath)))
         {
             throw "Source or Destination path Incorrect"
         }
@@ -62,7 +63,7 @@ Class FileValidator{
 
     hidden _ValidateUnderscore(){
                 try
-                  {
+                {
                 $charCount = ($this.stringtoValidate.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
                 #Write-Host "number of underscores are $charcount"
                 if ([int]$charCount -ne [FileValidator]::validateCount)
@@ -70,7 +71,7 @@ Class FileValidator{
                 else{
                     $this.validationResult = "SUCCESS"
                 }
-            }
+                }
             catch{
 
             }
@@ -108,41 +109,45 @@ Class FileValidator{
                     
                 }
             
-    FileValidator($sourcePath,$destinationPath){ # 
+    FileValidator($sourcePath,$destinationPath){ # without YAMl file explicitly defined
        # initialise static variable source and destination path
+
         [FileValidator]::sourcePath = $sourcePath
         [FileValidator]::destinationPath = $destinationPath
         #step 1
         $this._ValidatePath() # validates the internal member source and destination path
         #step 2
 
+    }
+
+    FileValidator($sourcePath,$destinationPath,$yamlPath) # with Yaml file explicitly defined
+    {
+        [FileValidator]::sourcePath = $sourcePath
+        [FileValidator]::destinationPath = $destinationPath  
+    }
 
     }
-    }
-    
-    Dispose(){
-        
-    }
+
    #endregion
     
 
- main{ 
-    param (
-            [Parameter(Mandatory=$true)]
-            [string]
-            $sourcePath,
+ function main{
+    # param (
+    #         [Parameter(Mandatory=$true)]
+    #         [string]
+    #         $sourcePath,
         
-            [Parameter(Mandatory=$true)]
-            [string]
-            $destinationPath,
+    #         [Parameter(Mandatory=$true)]
+    #         [string]
+    #         $destinationPath,
         
-            [Parameter(Mandatory=$false)]
-            [string]
-            $country  # default it to netherland as the first release is focussed on netherland
+    #         [Parameter(Mandatory=$false)]
+    #         [string]
+    #         $country  # default it to netherland as the first release is focussed on netherland
         
-     )# main function which will inetarct with all other 
+    #  )# main function which will inetarct with all other 
     begin{
-        $FSObject = [FileValidator]::new("C:\Classes and Runspaces", "C:\FS")
+        $FSObject2 = [FileValidator]::new("C:\Classes and Runspaceslll", "C:\FjjjS") # constructor without passing the YAMl
         
     }
     process{
@@ -285,7 +290,7 @@ Class FileValidator{
 
 #endregion
 Write-Host "starting"
-ValidationMain -sourcePath $sourcePath -destinationpath $destinationPath
+main 
 
 
 
