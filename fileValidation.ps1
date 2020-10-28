@@ -29,7 +29,7 @@ enum ListofValdations{
 Class FileValidator{
    
     #region class property
-    static [string]$yamlPath
+    static [string]$yamlPath;
     static [System.Collections.Hashtable]$yamlContent;
     static [string]$sourcePath;
     static [string]$destinationPath
@@ -111,7 +111,7 @@ Class FileValidator{
     {
         [FileValidator]::failedFolderPath = [FileValidator]::sourcePath + "\FailedValidation"
         $localPath = [FileValidator]::failedFolderpath
-        if (!(Test-Path [filevalidator]::failedFolderPath)){
+        if (!(Test-Path $localPath)){
             Write-Verbose "Creating failed Folder"
             $null = New-Item -ItemType Directory -Path $localPath 
         }
@@ -154,7 +154,7 @@ Class FileValidator{
                     
                 }
             
-    FileValidator($sourcePath,$destinationPath){ # without YAMl file explicitly defined
+    FileValidator($sourcePath,$destinationPath){ # Constructor to initialize and validate
        # initialise static variable source and destination path
         # assignment 
         [FileValidator]::sourcePath = $sourcePath
@@ -174,11 +174,7 @@ Class FileValidator{
             } 
       }
       
-    }
-
-      # step 2 country code validation
-      
-    }
+    }    }
 
     
 
@@ -193,7 +189,7 @@ Class FileValidator{
     }
     process{
         $FileObject.validationResult = "SUCCESS" # initial result assuming as success
-        $FileObject.validate($_)
+        $FileObject.validate($_) # validate the File
     }
 }
 
@@ -209,6 +205,12 @@ function Controller {
 Controller
 #endregion
 
+<#
+Running Notes
+
+
+
+#>
 
 
 
