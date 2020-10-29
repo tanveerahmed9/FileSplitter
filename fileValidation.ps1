@@ -20,9 +20,18 @@ param (
 #endregion
 
 # this will be updated when 
-enum ListofValdations{
-    _ValidateUnderscore = 1
-    _assignIndividualIdentifier = 2
+enum ValidationFunctions
+{
+    _ValidateUnderscore
+    _assignIndividualIdentifier
+    _GroupValidation
+}
+
+enum ListofGroupValdations{
+ country
+ EmployeeID
+ documentType
+ subDocumentType
 }
 
 #region Class
@@ -37,9 +46,9 @@ Class FileValidator{
     static [string]$failedFolderpath;
     static $validateCount = 9;
     static [string]$commonLogs;
-    static $collectiontoMatchgainst;
+    $_collectiontoMatchgainst;
     [string] $validationResult;
-    [System.Management.Automation.PSCustomObject] $fileCustomObject; # to store the current file separated data
+    $_fileCustomObject; # to store the current file separated data
     
     #endregion
 
@@ -85,6 +94,7 @@ Class FileValidator{
                 }
                 else{
                     $this.validationResult = "SUCCESS"
+                    
                 }
                 }
             catch{
@@ -124,35 +134,56 @@ Class FileValidator{
            
     }
 
-    hidden _GroupValidation([string]$toMatch){
-            
-                 if ($this.collectiontoMatchgainst -ccontains $toMatch)
-                 {
-                     $this.validationResult = "SUCCESS"
+    hidden _GroupValidation_Helper($currentValidation)
+    {
+        $currentString = $this._fileCustomObject.$currentValidation
+        $currentListToMatchAgainst = [FileValidator]::yamlContent.$currentValidation
+        Write-Host "Helper Called $currentListToMatchAgainst current String is $currentString"
+        if (!($currentListToMatchAgainst -contains $currentString)){
+            write-host "Group Validation Failed"
+            $this.validationResult = "FAILED"
+            $this._writeFilelog($currentValidation)
+            $this._movetofailedValidationFolder()
+        }
+    }
+
+    hidden _GroupValidation(){
+                  
+                # hash table to ietarte over all the greoup validations to be done
+
+                 $GroupValidationList = [ordered]@{
+                    Country = $this._FileCustomObject.Country
+                    documentType = $this._FileCustomObject.documentType
+                    subDocumentType = $this._FileCustomObject.subDocumentType
+                    }
+
+                 foreach ($currentKey in $GroupValidationList.Keys) {
+                     if ($this.validationResult -eq "SUCCESS"){  # keep validating until we get a failure
+                     $this._GroupValidation_Helper($currentkey, $GroupValidationList)
+                     }
+                     else{
+                        $this._writeFilelog($currentValidation)
+                        $this._movetofailedValidationFolder()
+                        Break
+                     }
                  }
-            
-                 else{
-                    $this.validationResult = "FAILED"
-                    _writeFilelog
-                    _movetofailedValidationFolder 
-                    continue
-                 }
-                }
-            
+    }
+               
     hidden _assignIndividualIdentifier(){
     
                     $splittedarray = $this.filename -split "_" 
                     #create custom object here for the fields which require validation
-                    $this.FileCustomObject = [PSCustomObject]@{
-                        countyCode = $splittedarray[0]
+                    $this._FileCustomObject = [PSCustomObject]@{
+                        country = $splittedarray[0]
                         employeeID = $splittedarray[1]
                         documentType = $splittedarray[2]
                         subDocumentType = $splittedarray[3]
                         documentDate = $splittedarray[5]
                         ingestionDate = $splittedarray[6]
                     }
-                    
-                }
+
+    }
+                
             
     FileValidator($sourcePath,$destinationPath){ # Constructor to initialize and validate
        # initialise static variable source and destination path
@@ -168,17 +199,17 @@ Class FileValidator{
     validate($filename)
     { # main function to validate all the steps
       $this.filename = $filename
-      foreach ($currentValidation in [ListofValdations].GetEnumNames()) {
-        while ($this.validationResult -ne "FAILED") {
+      foreach ($currentValidation in [System.Enum]::GetNames([ValidationFunctions]) ) { # Iterate through all validation methods until we get a failure
+        if ($this.validationResult -ne "FAILED" ) {
             $this.$currentValidation()
             } 
       }
       
-    }    }
+    }    
 
-    
+}  
 
-   #endregion
+#endregion
     
 
  function main{
@@ -202,13 +233,22 @@ function Controller {
 }
 
 
-Controller
+Controller #@PSBoundParameters
 #endregion
 
 <#
 Running Notes
+1. Will Create a RunTime ScriptMethod to cover all the group validations
+2. $sb - for all template of the scriptMethod
+3. Scriptmethod do not have access to non-static member of the class Need to explore more on this
 
+4. 2 Enums created 
+   a) ValidationFunctions- for addition of new valdiations please add an entry to this enum after adding the 
+       class method 
+   b) ListofGroupValdations - List of Group Validation to be done , add entry here and also make an entry in the 
+      Yaml file which will be loaded when we  first create the object
 
+5. The current Code is not thread safe , need to implement threading for same.
 
 #>
 
