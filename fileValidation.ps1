@@ -19,25 +19,26 @@ param (
 #required Powershell-yaml
 #endregion
 
-# this will be updated when 
+#region Enums 
 enum ValidationFunctions
 {
     _ValidateUnderscore
     _assignIndividualIdentifier
     _GroupValidation
+    _employeeIDValidation
 }
 
 enum ListofGroupValdations{
  country
- EmployeeID
  documentType
  subDocumentType
 }
-
+#endregion
 #region Class
 Class FileValidator{
    
     #region class property
+    [string] $_documentTyperun
     static [string]$yamlPath;
     static [System.Collections.Hashtable]$yamlContent;
     static [string]$sourcePath;
@@ -134,15 +135,28 @@ Class FileValidator{
            
     }
 
-    hidden _GroupValidation_Helper($currentValidation)
+    hidden _GroupValidation_Helper($currentKey)
     {
-        $currentString = $this._fileCustomObject.$currentValidation
-        $currentListToMatchAgainst = [FileValidator]::yamlContent.$currentValidation
-        Write-Host "Helper Called $currentListToMatchAgainst current String is $currentString"
+        if ($currentKey -eq "DocumentType") # captuting document type run to compare when sub-cocument is selected
+        {
+            $currentString = $this._fileCustomObject.$currentKey
+            $currentListToMatchAgainst  = $currentListToMatchAgainst = [FileValidator]::yamlContent.$currentKey
+            $this._documentTyperun = $currentString
+            
+        }
+        elseif ($currentKey -eq "subDocumentType") # second layer filtering in cased of sub-documentype
+        {
+            $currentString = $this._fileCustomObject.$currentKey
+            $currentListToMatchAgainst = [FileValidator]::yamlContent.$($this._documentTyperun)
+        }
+        else { # for other comparisons
+            $currentString = $this._fileCustomObject.$currentKey
+            $currentListToMatchAgainst = [FileValidator]::yamlContent.$currentKey 
+        }
+     
         if (!($currentListToMatchAgainst -contains $currentString)){
-            write-host "Group Validation Failed"
             $this.validationResult = "FAILED"
-            $this._writeFilelog($currentValidation)
+            $this._writeFilelog($currentKey)
             $this._movetofailedValidationFolder()
         }
     }
@@ -159,12 +173,7 @@ Class FileValidator{
 
                  foreach ($currentKey in $GroupValidationList.Keys) {
                      if ($this.validationResult -eq "SUCCESS"){  # keep validating until we get a failure
-                     $this._GroupValidation_Helper($currentkey, $GroupValidationList)
-                     }
-                     else{
-                        $this._writeFilelog($currentValidation)
-                        $this._movetofailedValidationFolder()
-                        Break
+                     $this._GroupValidation_Helper($currentkey)
                      }
                  }
     }
@@ -183,6 +192,17 @@ Class FileValidator{
                     }
 
     }
+
+    hidden _employeeIDValidation(){
+        $currentEmployeeID = $this._fileCustomObject.employeeID
+        if (!($currentEmployeeID -match "^[0-9]*$")) # regex for digits
+        {
+            $this.validationResult = "FAILED"
+            $this.validationResult = "FAILED"
+            $this._writeFilelog("EmployeeID")
+            $this._movetofailedValidationFolder()
+        }
+    }
                 
             
     FileValidator($sourcePath,$destinationPath){ # Constructor to initialize and validate
@@ -198,6 +218,7 @@ Class FileValidator{
 
     validate($filename)
     { # main function to validate all the steps
+      $this.validationResult = "SUCCESS" # initially makring the result as sucess for first validation to go through
       $this.filename = $filename
       foreach ($currentValidation in [System.Enum]::GetNames([ValidationFunctions]) ) { # Iterate through all validation methods until we get a failure
         if ($this.validationResult -ne "FAILED" ) {
@@ -206,21 +227,32 @@ Class FileValidator{
       }
       
     }    
-
-}  
-
 #endregion
-    
+}    
+#endregion
 
- function main{
+#region caller and controller
+ function main($totalFileCount){
     begin{
         # initialised once 
         $FileObject = [FileValidator]::new("C:\FStst", "C:\FStst") 
-        
+        $progressTracker = -1
+        $displayProgresstracker = 50 # show progress after every 20 files
     }
     process{
-        $FileObject.validationResult = "SUCCESS" # initial result assuming as success
+         # initial result assuming as success
+        $progressTracker += 1
+        $displayProgresstracker += 1
+        $percentageProgress = (($progressTracker/$totalFileCount)*100) 
+        $percentageProgress = [Math]::Round($percentageProgress,2)
+        if ($displayProgresstracker%50 -eq 0){
+        Write-Progress -PercentComplete "$percentageProgress" -Activity "Scanning Files in the Source" -Status "$percentageProgress% Completed"
+     }
         $FileObject.validate($_) # validate the File
+    }
+
+    end{
+        Write-host "Scanning Completed Total File Scanned $totalFileCount" -ForegroundColor Green
     }
 }
 
@@ -228,13 +260,14 @@ function Controller {
     process{
         $sourcePath = "C:\FStst" 
         $files = Get-ChildItem -Path $sourcePath -File
-        $files.Name | main
+        $totalFileCount = $files.count
+        $files.Name | main($totalFileCount)
     }
 }
-
+#endregion
 
 Controller #@PSBoundParameters
-#endregion
+
 
 <#
 Running Notes
