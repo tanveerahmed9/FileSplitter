@@ -1,0 +1,4 @@
+# to use this module we need to pass data in following format:-
+
+./filevalidation.ps1 -sourcePath "<your source>" -destpath "<your destination>" -countryCode "<"your country code">"
+

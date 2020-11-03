@@ -1,7 +1,3 @@
 # FileSplitter
 This project is for documentum migration file splitter utility.
 This will be tested against 4 millions of data hence use of runspaces, steppable pipeline and other helper module like PSProfiler will be done to make improvements.
-
-DE_2000017553_Personal ID Documents_Work Authorization_CL2780_20170731_20201015080254_Juan Esteban_Velez Tamayo_BEB2ABCEC6021EE7A0E59CE0DD5D0012.PDF
-DE_2011018725_Personal ID Documents_Work Authorization_CL2780_20190409_20201015080254_William_Ruzek_BEB2ABCEC6031ED999CAF2569CFB8E70.PDF
-DE_2033016470_Personal ID Documents_Work Authorization_CL2780_19950720_20201015080254_Klaus_Lorenz_4B67B26BEC4A0190E10080000AF80224.PDF

@@ -1,309 +1,289 @@
 # this will be the wrapper for 1st release 
-# param (
-#     [Parameter(Mandatory=$true)]
-#     [string]
-#     $sourcePath,
+param (
+    [Parameter(Mandatory=$true)]
+    [string]
+    $sourcePath,
 
-#     [Parameter(Mandatory=$true)]
-#     [string]
-#     $destinationPath,
+    [Parameter(Mandatory=$true)]
+    [string]
+    $destinationPath,
 
-#     [Parameter(Mandatory=$false)]
-#     [string]
-#     $country = "NL" # default it to netherland as the first release is focussed on netherland
+    [Parameter(Mandatory=$false)]
+    [string]
+    $country = "NL" # default it to netherland as the first release is focussed on netherland
 
-# )
-
+)
+#Requires -RunAsAdministrator
 #region Libraries, dependancies
-Import-Module powershell-yaml -ErrorAction SilentlyContinue
+#Import-Module powershell-yaml -ErrorAction SilentlyContinue
+#required Powershell-yaml
 #endregion
 
+#region Enums 
+enum ValidationFunctions
+{
+    _ValidateUnderscore
+    _assignIndividualIdentifier
+    _GroupValidation
+    _employeeIDValidation
+}
 
-function _movetofailedValidationFolder{
-param (
-    [Parameter(Mandatory=$true)]
-    [string]
-    $fileName
-)
-process{
-    try{
-    Move-Item -Path $fileName -Destination $Global:failedFolderpath -ErrorAction SilentlyContinue| Out-Null
-    return "SUCCESS"
+enum ListofGroupValdations{
+ country
+ documentType
+ subDocumentType
 }
-    catch{
-        Write-Host "file $filename could not be moved to failed folder" -BackgroundColor Yellow
-        return "Failed"
-    }
-}
-}
-function _ValidateUnderscores{
+#endregion
+#region Class
+Class FileValidator{
+   
+    #region class property
+    [string] $_documentTyperun
+    static [string]$yamlPath;
+    static [System.Collections.Hashtable]$yamlContent;
+    static [string]$sourcePath;
+    static [string]$destinationPath
+    [string]$filename;
+    static [string]$failedFolderpath;
+    static $validateCount = 9;
+    static [string]$commonLogs;
+    $_collectiontoMatchgainst;
+    [string] $validationResult;
+    $_fileCustomObject; # to store the current file separated data
     
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $stringtoValidate
-    )
-    process{
-        $charCount = ($stringtoValidate.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
-        #Write-Host "number of underscores are $charcount"
-        if ([int]$charCount -ne 9)
-        {return "FAILED"}
-        else{
-            return "SUCCESS"
+    #endregion
+
+    #region class method
+    hidden _movetofailedValidationFolder(){
+            try{
+            $internalSource = [FileValidator]::sourcePath
+            $currentFiletoMove = $internalSource + "\$($this.filename)"
+            $destinationMovement = [FileValidator]::failedFolderpath
+            Move-Item -Path "$currentFiletoMove" -Destination $destinationMovement -ErrorAction SilentlyContinue| Out-Null     
+           }
+            catch{
+                Write-Verbose "file $($this.filename) could not be moved to failed folder" -BackgroundColor Yellow
+                Write-Verbose "Failed"
+            }
         }
-    }
-}
-function _dateFormatValidation{ # second release
-    param (
-        [Parameter()]
-        [datetime]
-        $dateInstance = "",
-       
-        [Parameter(Mandatory=$true)]
-        [string]
-        [ValidateSet]
-        $dateformat 
-    )
-     begin{
-        $dateInstanceconcert = "20041204"
-        $dateformat = "YYYYMMDD"
-        Get-Date $dateInstanceconcert
+
+    hidden _writeFilelog($method){
+        $message = "Failed the Validaton - $method for File $($this.FileName)"
+        $logPath = [FileValidator]::failedFolderPath
+        $logPath = $logPath + "\logs.log"
+        $message | Out-File $logpath -Append
      }
-    process{
-
-    }
-    end{
-
-    }
-}
-
-function _GroupValidation{
-
-param (
-    [Parameter(Mandatory=$true)]
-    [string]
-    $stringToMatch,
-
-    [Parameter(Mandatory=$true)]
-    [System.Collections.ArrayList]
-    $collectiontoMatchgainst
-)
-
-process{
-     if ($collectiontoMatchgainst -ccontains $stringToMatch)
-     {
-         return "SUCCESS"
-     }
-
-     else{
-         return "FAILED"
-     }
-}
-
-}
-
-function _assignIndividualIdentifier{
-    # Parameter help description
-    param(
-    [Parameter(Mandatory=$true)]
-    [string]
-    $stringforIdentifier)
-
-    process{
-        $splittedarray = $filename -split "_"
-        #create custom object here for the fields which require validation
-        $fileCustomObject = [PSCustomObject]@{
-            countyCode = $splittedarray[0]
-            employeeID = $splittedarray[1]
-            documentType = $splittedarray[2]
-            subDocumentType = $splittedarray[3]
-            documentDate = $splittedarray[5]
-            ingestionDate = $splittedarray[6]
-        }
-        return $fileCustomObject
-    }
-}
- 
-function ValidationMain{ 
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $sourcePath,
-    
-        [Parameter(Mandatory=$true)]
-        [string]
-        $destinationPath,
-    
-        [Parameter(Mandatory=$false)]
-        [string]
-        $country = "NL" # default it to netherland as the first release is focussed on netherland
-    
-    )# main function which will inetarct with all other 
-begin{
-    
-    #region Source and destination validation
-    Write-Host "Validating source and destinaion" -ForegroundColor Blue
-    if (!(test-path $sourcePath)){
-        throw "Source path not in the host , please provide the correct source path"
-    }
-    Write-Host "Source path found" -ForegroundColor Green
-    if (!(Test-Path $destinationPath)){
-        throw "Destination path not in the host , please provide the correct Destination path" 
-    }
-    Write-Host "destination path found" -ForegroundColor Green
-    #endregion
-
-    #region failed validation folder creation
-    try{
-        Write-Host "Creating a failed validation folder"
-        New-Item -ItemType Directory -Path $sourcePath -Name "FailedValidation" -ErrorAction SilentlyContinue
-        Write-Host "Created the failed validation folder" -ForegroundColor Green
-        $Global:failedFolderpath = "$sourcePath\FailedValidation"
-    }
-    catch{
-        throw "issue while creaing a failed validation folder"
-    }
-    #endregion
-
-    #region load global config variables
-       # the value of the config will be used in the validation 
-       $global:yamlContent = Get-Content -Path ./validationconfig.yml -Raw
-       $global:yamlContent = $yamlContent | ConvertFrom-Yaml # converting from YAML to hast table use $yamlContent.gettype() and check out memebers to understand more
-
-    #endregion
-
-}
-process{
-    #region fetch the child items of the Souce folder
-    Write-Host "fetching files from the source folder" -ForegroundColor Blue
-    try{
-     $filesfromSource = Get-ChildItem $sourcePath -ErrorAction Stop  -File
-    }
-    catch{
-       throw "error while fetching child item of the source path $($_.exception.message)"
-    }
-    Write-Host "file fetch completed" -ForegroundColor Green
-    #endregion
-
-    #region validation mainK
-    write-host "starting the validation" -ForegroundColor Blue
-    foreach ($currentfile in $filesfromSource) {
-        $filename = $currentfile.Name
-        write-verbose "Current File selected is $filename" 
-        #region Underscore validation
-       # Write-Host "validating Underscore count..." -ForegroundColor Blue
-        $ValidateUnderscores_return = _ValidateUnderscores -stringtoValidate $filename 
-        if ($ValidateUnderscores_return -eq "SUCCESS"){
-           # Write-Host "Underscore test passed"
-           Write-Verbose "UnderScore test passed"
-        }
-        else{
-            write-verbose "Underscore test failed moving file to the failed directory" 
-            _movetofailedValidationFolder -fileName $currentfile.FullName
-            Write-Verbose "File moved . no further validation check done moving to next iten"
-            continue
-        }
-
-        #endregion
-         
-        #region assign file variables for validation
-        [pscustomobject]$validationCustomObject = _assignIndividualIdentifier -stringforIdentifier $filename
-        
-        #endregion
-
-        #region Country Code Validation
-          $currentCountryCode  = $validationCustomObject.countyCode
-          $allcountryCodes = $yamlContent.Country
-          # match the country code against the config config codes
-          if($currentCountryCode){
-          $countryCodeValidation = _GroupValidation -stringToMatch $currentCountryCode -collectiontoMatchgainst $allcountryCodes
-          if ($countryCodeValidation -eq "SUCCESS"){
-            Write-Verbose "Passed the country validation test for file $currentfile"
-          }
-          else{
-            Write-Verbose "failed the country validation test for file $currentfile  moving to failed folder"
-            _movetofailedValidationFolder -filename $currentfile.FullName
-            continue
-          }
-         }
-          else{
-              #country code empty , failed country code validation , since 
-          }
-        #endregion
-
-        #region docuement type test
-        if ($validationCustomObject.documentType){
-        $groupameValidationReturn = _GroupValidation -stringToMatch $validationCustomObject.documentType -collectiontoMatchgainst $yamlContent.DocumentType
-        if ($groupameValidationReturn -eq "FAILED"){
-            _movetofailedValidationFolder -filename $currentfile.FullName
-            Write-verbose "valied the 1st group test moving to failed folder"
-            continue
-        }
-    }
-        else{ # when the search string is empty
-            _movetofailedValidationFolder -filename $currentfile.FullName
-            Write-verbose "valied the 1st group test moving to failed folder"
-            continue
-        }
-        
-        #endregion
-
-        #region sub dcument type test
-        #fetching sub-document based on docuemnt type asuming $validationCustomObject.documentType is right group as it passd the document test.
-        $documentType = $validationCustomObject.documentType
-        $subdocumentArray = $yamlContent.$documentType # fetching sub-document based on document value
-        $subDocStringToMatch = $validationCustomObject.subDocumentType
-        # do a validation against sub groups
-        if ($subDocStringToMatch){
-        $subGroupValidationreturn = _GroupValidation -stringToMatch $subDocStringToMatch -collectiontoMatchgainst $subdocumentArray
-        if ($subGroupValidationreturn -eq "FAILED"){
-            Write-Verbose "File $filename fails the sub-group test , moving to failed folder"
-            _movetofailedValidationFolder -fileName $currentfile.FullName
-            continue
-        }
-        else{
-            write-verbose "File $filename passes sub group test"
-        }
-    }
-
-
-        else{
-            write-verbose "Sub Group string is empty , validation failed moving to failed folder"
-            _movetofailedValidationFolder -fileName $currentfile.FullName
-        }
-        #endregion
-        
-        # #region employee ID validation
-        # Write-Host "ID validation code to be written here"
-        $employeeID = $validationCustomObject.employeeID
-        if (!($employeeID -match "^[0-9]*$")) # employee ID needs to be only numbers
+     
+     #this function validates the number of 
+    hidden _ValidatePath(){
+        if (!(!(test-path [FileValidator]::sourcepath) -or !(test-path [FileValidator]::destinationPath)))
         {
-            Write-Verbose "employee ID contains non-Integer entry , moving to failed validation folder"
-            _movetofailedValidationFolder -fileName $currentfile.FullName
+            throw "Source or Destination path Incorrect"
         }
-        # #endregion
+    }
 
-        # #region date format validation
-        # Write-Host "date validation to be written here"
-        # #endregion
-        #
+    hidden _ValidateUnderscore(){
+                try
+                {
+                $charCount = ($this.filename.ToCharArray() | Where-Object {$_ -eq '_'} | Measure-Object).Count
+                #Write-Host "number of underscores are $charcount"
+                if ([int]$charCount -ne [FileValidator]::validateCount)
+                {
+                    $this.validationResult = "FAILED"
+                    $this._writeFilelog("ValidateUnderScore")
+                    $this._movetofailedValidationFolder()
+                }
+                else{
+                    $this.validationResult = "SUCCESS"
+                    
+                }
+                }
+            catch{
+
+            }
+            
+        }
+
+    hidden _loadconfig(){
+        write-host $PSScriptRoot
+        [FileValidator]::yamlPath = $PSScriptRoot + "\validationconfig.yml"
+        $yamlPath_ = [FileValidator]::yamlPath
+        if (!(test-path "$yamlPath_")) # when YAM does not exists
+        {
+            throw "Config File not found , please add the config file (in the same path) and then re-initiate"
+        }
+        else{
+            $yamlContentRaw = Get-Content -Path "$yamlPath_" -Raw -ErrorAction Stop
+            [FileValidator]::yamlContent = $yamlContentRaw | ConvertFrom-Yaml
+        }
     }
     
+    hidden _createFailedFolder()
+    {
+        [FileValidator]::failedFolderPath = [FileValidator]::sourcePath + "\FailedValidation"
+        $localPath = [FileValidator]::failedFolderpath
+        if (!(Test-Path $localPath)){
+            Write-Verbose "Creating failed Folder"
+            $null = New-Item -ItemType Directory -Path $localPath 
+        }
+        else{
 
-    #endregion
+        }
+    }
 
+    hidden  _dateFormatValidation(){ # second release
+           
+    }
 
+    hidden _GroupValidation_Helper($currentKey)
+    {
+        if ($currentKey -eq "DocumentType") # captuting document type run to compare when sub-cocument is selected
+        {
+            $currentString = $this._fileCustomObject.$currentKey
+            $currentListToMatchAgainst  = $currentListToMatchAgainst = [FileValidator]::yamlContent.$currentKey
+            $this._documentTyperun = $currentString
+            
+        }
+        elseif ($currentKey -eq "subDocumentType") # second layer filtering in cased of sub-documentype
+        {
+            $currentString = $this._fileCustomObject.$currentKey
+            $currentListToMatchAgainst = [FileValidator]::yamlContent.$($this._documentTyperun)
+        }
+        else { # for other comparisons
+            $currentString = $this._fileCustomObject.$currentKey
+            $currentListToMatchAgainst = [FileValidator]::yamlContent.$currentKey 
+        }
+     
+        if (!($currentListToMatchAgainst -contains $currentString)){
+            $this.validationResult = "FAILED"
+            $this._writeFilelog($currentKey)
+            $this._movetofailedValidationFolder()
+        }
+    }
 
+    hidden _GroupValidation(){
+                  
+                # hash table to ietarte over all the greoup validations to be done
+
+                 $GroupValidationList = [ordered]@{
+                    Country = $this._FileCustomObject.Country
+                    documentType = $this._FileCustomObject.documentType
+                    subDocumentType = $this._FileCustomObject.subDocumentType
+                    }
+
+                 foreach ($currentKey in $GroupValidationList.Keys) {
+                     if ($this.validationResult -eq "SUCCESS"){  # keep validating until we get a failure
+                     $this._GroupValidation_Helper($currentkey)
+                     }
+                 }
+    }
+               
+    hidden _assignIndividualIdentifier(){
+    
+                    $splittedarray = $this.filename -split "_" 
+                    #create custom object here for the fields which require validation
+                    $this._FileCustomObject = [PSCustomObject]@{
+                        country = $splittedarray[0]
+                        employeeID = $splittedarray[1]
+                        documentType = $splittedarray[2]
+                        subDocumentType = $splittedarray[3]
+                        documentDate = $splittedarray[5]
+                        ingestionDate = $splittedarray[6]
+                    }
+
+    }
+
+    hidden _employeeIDValidation(){
+        $currentEmployeeID = $this._fileCustomObject.employeeID
+        if (!($currentEmployeeID -match "^[0-9]*$")) # regex for digits
+        {
+            $this.validationResult = "FAILED"
+            $this.validationResult = "FAILED"
+            $this._writeFilelog("EmployeeID")
+            $this._movetofailedValidationFolder()
+        }
+    }
+                
+            
+    FileValidator($sourcePath,$destinationPath){ # Constructor to initialize and validate
+       # initialise static variable source and destination path
+        # assignment 
+        [FileValidator]::sourcePath = $sourcePath
+        [FileValidator]::destinationPath = $destinationPath
+        #tasks
+        $this._ValidatePath() # validates the internal member source and destination path
+        $this._loadconfig() # loads the config data to be available to all the instances of the class
+        $this._createFailedFolder() # creates the Failed folder 
+    }
+
+    validate($filename)
+    { # main function to validate all the steps
+      $this.validationResult = "SUCCESS" # initially makring the result as sucess for first validation to go through
+      $this.filename = $filename
+      foreach ($currentValidation in [System.Enum]::GetNames([ValidationFunctions]) ) { # Iterate through all validation methods until we get a failure
+        if ($this.validationResult -ne "FAILED" ) {
+            $this.$currentValidation()
+            } 
+      }
+      
+    }    
+#endregion
+}    
+#endregion
+
+#region caller and controller
+ function main($totalFileCount){
+    begin{
+        # initialised once 
+        $FileObject = [FileValidator]::new("C:\FStst", "C:\FStst") 
+        $progressTracker = -1
+        $displayProgresstracker = 50 # show progress after every 20 files
+    }
+    process{
+         # initial result assuming as success
+        $progressTracker += 1
+        $displayProgresstracker += 1
+        $percentageProgress = (($progressTracker/$totalFileCount)*100) 
+        $percentageProgress = [Math]::Round($percentageProgress,2)
+        if ($displayProgresstracker%50 -eq 0){
+        Write-Progress -PercentComplete "$percentageProgress" -Activity "Scanning Files in the Source" -Status "$percentageProgress% Completed"
+     }
+        $FileObject.validate($_) # validate the File
+    }
+
+    end{
+        Write-host "Scanning Completed Total File Scanned $totalFileCount" -ForegroundColor Green
+    }
 }
-end{  
-    Write-Host "finished" -ForegroundColor Green
-    # call the file mover code once all validation is done
 
- }
+function Controller {
+    process{
+        $sourcePath = "C:\FStst" 
+        $files = Get-ChildItem -Path $sourcePath -File
+        $totalFileCount = $files.count
+        $files.Name | main($totalFileCount)
+    }
 }
-Write-Host "starting"
-ValidationMain -sourcePath $sourcePath -destinationpath $destinationPath
+#endregion
 
+Controller #@PSBoundParameters
+
+
+<#
+Running Notes
+1. Will Create a RunTime ScriptMethod to cover all the group validations
+2. $sb - for all template of the scriptMethod
+3. Scriptmethod do not have access to non-static member of the class Need to explore more on this
+
+4. 2 Enums created 
+   a) ValidationFunctions- for addition of new valdiations please add an entry to this enum after adding the 
+       class method 
+   b) ListofGroupValdations - List of Group Validation to be done , add entry here and also make an entry in the 
+      Yaml file which will be loaded when we  first create the object
+
+5. The current Code is not thread safe , need to implement threading for same.
+
+#>
 
 
 

@@ -1,0 +1,14 @@
+# structure of the use case
+
+
+main
+1. begin block of main is used to initilaize (temp file creation , )
+2. process block to execute against each selection
+3. Each process is going to be executed against multiple validations (hidden functions in the class)
+4. end block used to commemorate number of files moved and other final data
+
+class
+
+1. Constructor to initilaize the file data
+2. hidden or private functions as  validations
+3. static class properties to be used in the validation functions
