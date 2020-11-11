@@ -34,7 +34,7 @@ enum ListofGroupValdations{
  subDocumentType
 }
 #endregion
-#region Class
+#region Class FileValidator
 Class FileValidator{
    
     #region class property
