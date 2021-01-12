@@ -67,8 +67,8 @@ Class FileValidator{
             }
         }
 
-    hidden _writeFilelog($method){
-        $message = "Failed the Validaton - $method for File $($this.FileName)"
+    hidden _writeFilelog($methodName){
+        $message = "Failed the Validaton - $methodName for File $($this.FileName)"
         $logPath = [FileValidator]::failedFolderPath
         $logPath = $logPath + "\logs.log"
         $message | Out-File $logpath -Append
@@ -90,7 +90,7 @@ Class FileValidator{
                 if ([int]$charCount -ne [FileValidator]::validateCount)
                 {
                     $this.validationResult = "FAILED"
-                    $this._writeFilelog("ValidateUnderScore")
+                    $this._writeFilelog("ValidateUnderScore") # Writing failed log for method Validate Underscores
                     $this._movetofailedValidationFolder()
                 }
                 else{
@@ -99,13 +99,15 @@ Class FileValidator{
                 }
                 }
             catch{
-
+                $this.validationResult = "FAILED"
+                $this._writeFilelog("ValidateUnderScore") # Writing failed log for method Validate Underscores
+                $this._movetofailedValidationFolder()
             }
             
         }
 
     hidden _loadconfig(){
-        write-host $PSScriptRoot
+        
         [FileValidator]::yamlPath = $PSScriptRoot + "\validationconfig.yml"
         $yamlPath_ = [FileValidator]::yamlPath
         if (!(test-path "$yamlPath_")) # when YAM does not exists
@@ -127,7 +129,7 @@ Class FileValidator{
             $null = New-Item -ItemType Directory -Path $localPath 
         }
         else{
-
+            Write-Verbose "Failed Folder path already present"
         }
     }
 
@@ -220,7 +222,7 @@ Class FileValidator{
     { # main function to validate all the steps
       $this.validationResult = "SUCCESS" # initially makring the result as sucess for first validation to go through
       $this.filename = $filename
-      foreach ($currentValidation in [System.Enum]::GetNames([ValidationFunctions]) ) { # Iterate through all validation methods until we get a failure
+      foreach ($currentValidation in [System.Enum]::GetNames([ValidationFunctions]) ) { # Iterate through all validation methods until we get a failure or all SUCCESS
         if ($this.validationResult -ne "FAILED" ) {
             $this.$currentValidation()
             } 
