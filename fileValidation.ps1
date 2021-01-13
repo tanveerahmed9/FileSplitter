@@ -51,7 +51,20 @@ Class FileValidator{
     static [string]$commonLogs;
     $_collectiontoMatchgainst;
     [string] $validationResult;
-    $_fileCustomObject; # to store the current file separated data
+    $_fileCustomObject; 
+    static [scriptblock] $sbforConcurrency = {
+        validate($filename)
+        { # main function to validate all the steps
+          $this.validationResult = "SUCCESS" # initially marking the result as sucess for first validation to go through
+          $this.filename = $filename
+          foreach ($currentValidation in [System.Enum]::GetNames([ValidationFunctions]) ) { # Iterate through all validation methods until we get a failure or all SUCCESS
+            if ($this.validationResult -ne "FAILED" ) {
+                $this.$currentValidation()
+                } 
+          }
+          
+        }   
+    } 
     
     
     #endregion
@@ -220,7 +233,7 @@ Class FileValidator{
     hidden _ExecuteRunspace(){
         $powerShell = [PowerShell]::Create()
         $powerShell.RunspacePool = [FileValidator]::rs
-        $powerShell.AddScript($this.sbforConcurrency) # the validate is invoked in this scenario
+        $powerShell.AddScript([FileValidator]::sbforConcurrency) # the validate is invoked in this scenario
         $powerShell.AddArgument($this.filename)
         $powerShell.BeginInvoke() | Out-Null 
     }
@@ -231,25 +244,13 @@ Class FileValidator{
         # assignment 
         [FileValidator]::sourcePath = $sourcePath
         [FileValidator]::destinationPath = $destinationPath
-        #tasks
         $this._initializeRunspace() # initialise the runspace for concurrency
         $this._ValidatePath() # validates the internal member source and destination path
         $this._loadconfig() # loads the config data to be available to all the instances of the class
         $this._createFailedFolder() # creates the Failed folder 
     }
- $sbforConcurrency = {
-    validate($filename)
-    { # main function to validate all the steps
-      $this.validationResult = "SUCCESS" # initially marking the result as sucess for first validation to go through
-      $this.filename = $filename
-      foreach ($currentValidation in [System.Enum]::GetNames([ValidationFunctions]) ) { # Iterate through all validation methods until we get a failure or all SUCCESS
-        if ($this.validationResult -ne "FAILED" ) {
-            $this.$currentValidation()
-            } 
-      }
-      
-    }   
-} 
+
+
 #endregion
 }    
 #endregion
@@ -259,19 +260,19 @@ Class FileValidator{
     begin{
         # initialised once 
         $FileObject = [FileValidator]::new("C:\FStst", "C:\FStst") 
-        $progressTracker = -1
-        $displayProgresstracker = 50 # show progress after every 20 files
+        # $progressTracker = -1
+        # $displayProgresstracker = 50 # show progress after every 20 files
     }
     process{
          # initial result assuming as success
-        $progressTracker += 1
-        $displayProgresstracker += 1
-        $percentageProgress = (($progressTracker/$totalFileCount)*100) 
-        $percentageProgress = [Math]::Round($percentageProgress,2)
-        if ($displayProgresstracker%50 -eq 0){
-        Write-Progress -PercentComplete "$percentageProgress" -Activity "Scanning Files in the Source" -Status "$percentageProgress% Completed"
-     }
-        $FileObject.validate($_) # validate the File
+    #     $progressTracker += 1
+    #     $displayProgresstracker += 1
+    #     $percentageProgress = (($progressTracker/$totalFileCount)*100) 
+    #     $percentageProgress = [Math]::Round($percentageProgress,2)
+    #     if ($displayProgresstracker%50 -eq 0){
+    #     Write-Progress -PercentComplete "$percentageProgress" -Activity "Scanning Files in the Source" -Status "$percentageProgress% Completed"
+    #  }
+        $this._ExecuteRunspace() # validate the File
     }
 
     end{
