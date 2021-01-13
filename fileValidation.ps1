@@ -39,6 +39,8 @@ Class FileValidator{
    
     #region class property
     [string] $_documentTyperun
+    [powershell] $ps;
+    static [System.Management.Automation.Runspaces.RunspacePool] $rs ;
     static [string]$yamlPath;
     static [System.Collections.Hashtable]$yamlContent;
     static [string]$sourcePath;
@@ -50,6 +52,7 @@ Class FileValidator{
     $_collectiontoMatchgainst;
     [string] $validationResult;
     $_fileCustomObject; # to store the current file separated data
+    
     
     #endregion
 
@@ -205,6 +208,22 @@ Class FileValidator{
             $this._movetofailedValidationFolder()
         }
     }
+
+    hidden _initializeRunspace(){
+        # this function can be either used separately or clubbed , we will think on it as soon as we scale the code
+        # create a runspace object
+        [FileValidator]::rs = [runspacefactory]::CreateRunspacePool(1,4)
+        [FileValidator]::rs.open() # opem the runspace so that it can be used in the PowerShell Object
+        $this.ps = [PowerShell]::Create() 
+    }
+
+    hidden _ExecuteRunspace(){
+        $powerShell = [PowerShell]::Create()
+        $powerShell.RunspacePool = [FileValidator]::rs
+        $powerShell.AddScript($this.sbforConcurrency) # the validate is invoked in this scenario
+        $powerShell.AddArgument($this.filename)
+        $powerShell.BeginInvoke() | Out-Null 
+    }
                 
             
     FileValidator($sourcePath,$destinationPath){ # Constructor to initialize and validate
@@ -213,14 +232,15 @@ Class FileValidator{
         [FileValidator]::sourcePath = $sourcePath
         [FileValidator]::destinationPath = $destinationPath
         #tasks
+        $this._initializeRunspace() # initialise the runspace for concurrency
         $this._ValidatePath() # validates the internal member source and destination path
         $this._loadconfig() # loads the config data to be available to all the instances of the class
         $this._createFailedFolder() # creates the Failed folder 
     }
-
+ $sbforConcurrency = {
     validate($filename)
     { # main function to validate all the steps
-      $this.validationResult = "SUCCESS" # initially makring the result as sucess for first validation to go through
+      $this.validationResult = "SUCCESS" # initially marking the result as sucess for first validation to go through
       $this.filename = $filename
       foreach ($currentValidation in [System.Enum]::GetNames([ValidationFunctions]) ) { # Iterate through all validation methods until we get a failure or all SUCCESS
         if ($this.validationResult -ne "FAILED" ) {
@@ -228,7 +248,8 @@ Class FileValidator{
             } 
       }
       
-    }    
+    }   
+} 
 #endregion
 }    
 #endregion
@@ -283,7 +304,7 @@ Running Notes
    b) ListofGroupValdations - List of Group Validation to be done , add entry here and also make an entry in the 
       Yaml file which will be loaded when we  first create the object
 
-5. The current Code is not thread safe , need to implement threading for same.
+5. The current Code is not thread safe , need to implement RS.
 
 #>
 
